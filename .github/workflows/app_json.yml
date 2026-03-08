@@ -1,0 +1,50 @@
+name: Periodic JSON Update
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # 5分おき（GitHubの標準的な最小間隔）
+  workflow_dispatch:      # ボタン押して手動で即時実行も可能
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download and Validate JSONs
+        run: |
+          # 1つ目のJSON (KYOTOGRAPHIE)
+          echo "Downloading app_kg.json..."
+          curl -f -s "https://www.kyotographie.jp/api/exhibition/" -o app_kg_temp.json
+          
+          if jq -e . >/dev/null 2>&1 < app_kg_temp.json; then
+            mv app_kg_temp.json app_kg.json
+            echo "app_kg.json updated successfully."
+          else
+            echo "Error: app_kg.json is not a valid JSON. Skipping update."
+            exit 1
+          fi
+
+          # 2つ目のJSON (KG+)
+          echo "Downloading app_plus.json..."
+          curl -f -s "https://kgplus.kyotographie.jp/api/exhibition/" -o app_plus_temp.json
+          
+          if jq -e . >/dev/null 2>&1 < app_plus_temp.json; then
+            mv app_plus_temp.json app_plus.json
+            echo "app_plus.json updated successfully."
+          else
+            echo "Error: app_plus.json is not a valid JSON. Skipping update."
+            exit 1
+          fi
+
+      - name: Deploy to GitHub Pages (History-free)
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
+          # 以下のファイルだけを公開対象にしたい場合は、exclude_assets などで調整も可能ですが、
+          # 基本は publish_dir にあるものが全部 gh-pages ブランチに飛びます。
+          keep_files: false
+          force_modify: true
