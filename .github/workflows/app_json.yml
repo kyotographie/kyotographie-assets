@@ -2,8 +2,9 @@ name: Periodic JSON Update
 
 on:
   schedule:
+    # 5分おきに設定（これでも認識されない場合は、一度 '0 * * * *' などに変えてPushするのも手です）
     - cron: '*/5 * * * *'
-  workflow_dispatch:
+  workflow_dispatch: # 手動ボタンも残す
 
 # 権限不足エラーを解消するための設定を追加
 permissions:
